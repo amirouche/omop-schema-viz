@@ -87,6 +87,12 @@ let createSimpleApp = function(app, root, init, view) {
     render = function() {
         let html = view(model, makeController);
         ReactDOM.render(html, root);
+        if (document.location.hash !== '') {
+            // XXX: quick fix to make http://foobar/#hash work
+            // it might not always be what we want.
+            let target = document.querySelector(document.location.hash);
+            target.scrollIntoView();
+        }
     };
 
     // sneak into an application from the outside.
