@@ -181,7 +181,7 @@ let Hit = function({element, mc}) {
 
 let homeView = function(model, mc) {
     let query = model.query;
-    let hits = model.hits.map(element => <Hit element={element} mc={mc} />);
+    let hits = model.hits.map(element => <Hit key={element.getAttribute("name")} element={element} mc={mc} />);
 
     return (
         <>
