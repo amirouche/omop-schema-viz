@@ -10,6 +10,19 @@ import { Graph } from 'react-d3-graph';
 
 let router = new ff.Router()
 
+// helpers
+
+let linkReference = function (reference) {
+    // XXX: workaround mishandling of [foobar] in ReactMarkdown
+    // https://github.com/rexxars/react-markdown/issues/115#issuecomment-357953459
+    if (!reference.href) {
+        ff.pk(reference);
+        return `[ ${reference.children[0].props.value} ]`;
+    }
+
+    return <a href={reference.$ref}>{reference.children}</a>
+}
+
 // graph
 
 // the graph configuration, you only need to pass down properties
@@ -257,7 +270,8 @@ let Column = function({column, pk}) {
     return (
         <div>
             <h3 id={name}><Badge variant="secondary">Column</Badge> {pk} {name}</h3>
-            <ReactMarkdown source={remarks} />
+            <ReactMarkdown  renderers={{ linkReference: linkReference }}
+                            source={remarks} />
         </div>
     );
 }
@@ -320,7 +334,8 @@ let Table = function({table}) {
                     <Card>
                         <Card.Body>
                             <h2 id={name}><Badge variant="primary">Table</Badge> {name}</h2>
-                            <ReactMarkdown source={remarks} />
+                            <ReactMarkdown renderers={{ linkReference: linkReference }}
+                                           source={remarks} />
                             {columns.map(column => <Column key={column.getAttribute("name")}
                                                            column={column} pk={pk} />)}
                             {indices.map(index => <Index key={index.getAttribute("name")} index={index} />)}
