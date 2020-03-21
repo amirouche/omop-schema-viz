@@ -131,7 +131,8 @@ let homeInit = async function() {
 
 let match = function(element, query) {
     let remarks = element.getAttribute('remarks');
-    return remarks.includes(query);
+    let name = element.getAttribute('name');
+    return remarks.includes(query) || name.includes(query);
 }
 
 let onSubmit = async function(app, model, event) {
