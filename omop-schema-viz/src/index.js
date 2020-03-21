@@ -5,9 +5,103 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import {Badge, Card, Container, Row, Col, Navbar, Nav, Form, Button} from 'react-bootstrap';
 import ff from './ff.js';
 import ReactMarkdown from 'react-markdown';
+import { Graph } from 'react-d3-graph';
 
 
 let router = new ff.Router()
+
+// graph
+
+// the graph configuration, you only need to pass down properties
+// that you want to override, otherwise default ones will be used
+let myConfig = {
+    nodeHighlightBehavior: true,
+    node: {
+        color: 'lightgreen',
+        size: 120,
+        highlightStrokeColor: 'blue'
+    },
+    link: {
+        highlightColor: 'lightblue'
+    },
+    height: 768,
+    width: 1024
+};
+
+let onClickGraphNode = async function(app, model, event) {
+
+    let schema = model.schema;
+    let xpath = `//*[@name="${event}"]`;
+
+    let result = schema.evaluate(xpath, schema, null, XPathResult.ANY_TYPE, null);
+
+    let element = result.iterateNext();
+
+    model = {schema:schema, element: element};
+
+    return () => model;
+};
+
+let graphInit = async function(app, model, param) {
+    let response = await ff.get("/schema.xml");
+    let text = await response.text()
+    let parser = new DOMParser();
+    let schema = parser.parseFromString(text, "application/xml");
+
+    let newModel = {schema: schema, element: undefined};
+
+    return () => newModel;
+}
+
+let graphView = function(model, mc) {
+    let schema = model.schema;
+    let element = model.element;
+    let data = {nodes: [], links: []};
+
+    let table;
+    let result = schema.evaluate( '//table', schema, null, XPathResult.ANY_TYPE, null);
+    while(table = result.iterateNext()) {
+        let columns = table.querySelectorAll(':scope > column');
+        table = table.getAttribute("name");
+        data.nodes.push({id: table, symbolType: "diamond", size: 150, color: "red"});
+
+        for (let column of columns) {
+            column = column.getAttribute("name");
+            data.nodes.push({id: column});
+            data.links.push({source: table, target: column});
+        }
+    }
+
+    let hit;
+    if (element !== undefined) {
+        hit = <Hit element={element} mc={mc} />;
+    } else {
+        hit = <p>Select a node</p>;
+    }
+
+    return (
+        <>
+            <Header />
+            <Container fluid>
+                <Row>
+                    <Col>
+                        <Graph id="graph-id"
+                               data={data}
+                               config={myConfig}
+                               onClickNode={mc(onClickGraphNode)}
+                        />
+                    </Col>
+                    <Col>
+                        { hit }
+                    </Col>
+                </Row>
+            </Container>
+        </>
+
+    );
+};
+
+router.append('/graph/', graphInit, graphView)
 
 // home
 
@@ -57,7 +151,7 @@ let onQueryChange = async function(app, model, event) {
     return () => model;
 }
 
-let Hit = function({element}) {
+let Hit = function({element, mc}) {
     let badge;
     if(element.tagName === "table") {
         badge = <Badge variant="primary">Table</Badge>;
@@ -68,13 +162,13 @@ let Hit = function({element}) {
     let name = element.getAttribute('name');
 
     return (
-        <div>{badge} <a href={"/reference/#" + name}>{name}</a> <small className="text-muted">{element.getAttribute("remarks")}</small></div>
+        <div>{badge} <ff.Link mc={mc} href={"/reference/#" + name}>{name}</ff.Link> <small className="text-muted">{element.getAttribute("remarks")}</small></div>
     )
 }
 
 let homeView = function(model, mc) {
     let query = model.query;
-    let hits = model.hits.map(element => <Hit element={element}/>);
+    let hits = model.hits.map(element => <Hit element={element} mc={mc} />);
 
     return (
         <>
@@ -106,6 +200,8 @@ let homeView = function(model, mc) {
         </>
     );
 }
+
+router.append('/', homeInit, homeView)
 
 // reference
 
@@ -247,9 +343,6 @@ let referenceView = function(model, mc) {
         tables.push(table);
     }
 
-    ff.pk('tables', tables);
-
-
     return (
         <>
             <Header/>
@@ -259,7 +352,6 @@ let referenceView = function(model, mc) {
     )
 }
 
-router.append('/', homeInit, homeView)
 router.append('/reference/', referenceInit, referenceView)
 
 ff.createApp(router);
