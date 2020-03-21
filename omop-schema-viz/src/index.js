@@ -16,7 +16,6 @@ let linkReference = function (reference) {
     // XXX: workaround mishandling of [foobar] in ReactMarkdown
     // https://github.com/rexxars/react-markdown/issues/115#issuecomment-357953459
     if (!reference.href) {
-        ff.pk(reference);
         return `[ ${reference.children[0].props.value} ]`;
     }
 
