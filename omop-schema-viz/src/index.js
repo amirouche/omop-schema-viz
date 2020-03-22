@@ -178,7 +178,7 @@ let match = function(element, query) {
     let found = {};
     let hits = index.forEach(function(word) {
         for (let term of terms) {
-            if (word.startsWith(term)) {
+            if (word.includes(term)) {
                 found[term] = true
                 return;
             }
