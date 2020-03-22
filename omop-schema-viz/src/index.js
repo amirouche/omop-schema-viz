@@ -130,9 +130,31 @@ let homeInit = async function() {
 
 
 let match = function(element, query) {
+    // prepare query
+    let terms = query.toLowerCase()
+                     .split(/(\s+)/)
+                     .filter( function(e) { return e.trim().length > 0; } );
+    // prepare "index"
     let remarks = element.getAttribute('remarks');
     let name = element.getAttribute('name');
-    return remarks.includes(query) || name.includes(query);
+    let index = remarks + ' ' + name;
+    index = index.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    index = index.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ");
+    index = index.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } );
+
+    ff.pk('index', index);
+    // check if it is a match
+    let hits = index.filter(function(word) {
+        for (let term of terms) {
+            if (word.startsWith(term)) {
+                return true;
+            }
+        }
+        return false;
+    })
+
+    ff.pk(hits);
+    return hits.length !== 0;
 }
 
 let onSubmit = async function(app, model, event) {
