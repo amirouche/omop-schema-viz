@@ -71,6 +71,8 @@ let createSimpleApp = function(app, root, init, view) {
      */
     let makeController = function(controller) {
         return function(event) {
+            // https://fb.me/react-event-pooling
+            event.persist()
             let promise = controller(app, model, event);
             promise.then(function(transformer) {
                 // XXX: if the controller returns nothing
