@@ -133,7 +133,28 @@ let homeInit = async function() {
     let parser = new DOMParser();
     let schema = parser.parseFromString(text, "application/xml");
 
-    let newModel = {schema: schema, query: "", hits: []};
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('q') || "";
+
+    let hits = [];
+    if (query !== "") {
+        let element;
+        let elements = [];
+
+        let result = schema.evaluate( '//table', schema, null, XPathResult.ANY_TYPE, null);
+        while(element = result.iterateNext()) {
+            elements.push(element);
+        }
+
+        result = schema.evaluate( '//table/column', schema, null, XPathResult.ANY_TYPE, null);
+        while(element = result.iterateNext()) {
+            elements.push(element);
+        }
+
+        hits = elements.filter(element => match(element, query));
+    }
+
+    let newModel = {schema: schema, query: query, hits: hits};
 
     return () => newModel;
 }
@@ -142,6 +163,7 @@ let homeInit = async function() {
 let match = function(element, query) {
     // prepare query
     let terms = query.toLowerCase()
+                     .replace("+", " ")
                      .split(/(\s+)/)
                      .filter( function(e) { return e.trim().length > 0; } );
     // prepare "index"
@@ -168,26 +190,8 @@ let match = function(element, query) {
 
 let onSubmit = async function(app, model, event) {
     event.preventDefault();
-    let schema = model.schema;
-    let query = model.query;
-    let element;
-    let elements = [];
 
-    let result = schema.evaluate( '//table', schema, null, XPathResult.ANY_TYPE, null);
-    while(element = result.iterateNext()) {
-        elements.push(element);
-    }
-
-    result = schema.evaluate( '//table/column', schema, null, XPathResult.ANY_TYPE, null);
-    while(element = result.iterateNext()) {
-        elements.push(element);
-    }
-
-    let hits = elements.filter(element => match(element, query));
-
-    model.hits = hits;
-
-    return () => model;
+    return ff.redirect(app, model, "/?q=" + model.query);
 }
 
 let onQueryChange = async function(app, model, event) {
