@@ -153,16 +153,17 @@ let match = function(element, query) {
     index = index.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } );
 
     // check if it is a match
-    let hits = index.filter(function(word) {
+    let found = {};
+    let hits = index.forEach(function(word) {
         for (let term of terms) {
             if (word.startsWith(term)) {
-                return true;
+                found[term] = true
+                return;
             }
         }
-        return false;
     })
 
-    return hits.length !== 0;
+    return Object.keys(found).length === terms.length;
 }
 
 let onSubmit = async function(app, model, event) {
