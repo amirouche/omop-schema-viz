@@ -22,6 +22,16 @@ let linkReference = function (reference) {
     return <a href={reference.$ref}>{reference.children}</a>
 }
 
+let elementToKey = function(element) {
+    if (element.tagName === "Table") {
+        return element.getAttribute("name");
+    } else {
+        let table = element.parentElement.getAttribute("name");
+        let column = element.getAttribute("name");
+        return table + "#" + element.tagName + "#" + column;
+    }
+}
+
 // graph
 
 // the graph configuration, you only need to pass down properties
@@ -142,7 +152,6 @@ let match = function(element, query) {
     index = index.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ");
     index = index.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } );
 
-    ff.pk('index', index);
     // check if it is a match
     let hits = index.filter(function(word) {
         for (let term of terms) {
@@ -153,7 +162,6 @@ let match = function(element, query) {
         return false;
     })
 
-    ff.pk(hits);
     return hits.length !== 0;
 }
 
@@ -203,7 +211,7 @@ let Hit = function({element, mc}) {
 
 let homeView = function(model, mc) {
     let query = model.query;
-    let hits = model.hits.map(element => <Hit key={element.getAttribute("name")} element={element} mc={mc} />);
+    let hits = model.hits.map(element => <Hit key={elementToKey(element)} element={element} mc={mc} />);
 
     return (
         <>
@@ -330,7 +338,7 @@ let Index = function({index}) {
                 <div>
                     <h4><Badge variant="success">Index</Badge> {unique} {name}</h4>
                     <ul>
-                        {columns.map(column => <IndexColumn key={column.getAttribute("name")}
+                        {columns.map(column => <IndexColumn key={elementToKey(column)}
                                                             column={column} />)}
                     </ul>
                 </div>
@@ -358,9 +366,9 @@ let Table = function({table}) {
                             <h2 id={name}><Badge variant="primary">Table</Badge> {name}</h2>
                             <ReactMarkdown renderers={{ linkReference: linkReference }}
                                            source={remarks} />
-                            {columns.map(column => <Column key={column.getAttribute("name")}
+                            {columns.map(column => <Column key={elementToKey(column)}
                                                            column={column} pk={pk} />)}
-                            {indices.map(index => <Index key={index.getAttribute("name")} index={index} />)}
+                            {indices.map(index => <Index key={elementToKey(index)} index={index} />)}
                         </Card.Body>
                     </Card>
                 </Col>
@@ -383,7 +391,7 @@ let referenceView = function(model, mc) {
     return (
         <>
             <Header/>
-            {tables.map(table => <Table key={table.getAttribute('name')}
+            {tables.map(table => <Table key={elementToKey(table)}
                                         table={table}></Table>)}
         </>
     )
